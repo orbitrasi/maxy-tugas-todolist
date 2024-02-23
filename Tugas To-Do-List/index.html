@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi To-Do List Orbit Rasi</title>
+    <script src="https://kit.fontawesome.com/c0c14890a3.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100vh; /* Menetapkan tinggi minimal ke tinggi viewport */
+            overflow: hidden;
+            overflow-x: hidden; /* Mencegah scroll horizontal */
+            overflow-y: auto; /* Mengizinkan scroll vertikal */
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            font-family: Arial, sans-serif;
+            filter: blur(5px);
+            z-index: -1;
+        }
+
+        .modal {
+            display: none;
+          }          
+        
+        .is-complete {
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+<body>
+
+<section class="section">
+    <div class="container">
+        <h1 class="title">Aplikasi To-Do List</h1>
+        <div class="field">
+            <label class="label">Judul Tugas</label>
+            <div class="control">
+                <input class="input" type="text" id="taskTitle" placeholder="Judul Tugas">
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Deskripsi Tugas</label>
+            <div class="control">
+                <textarea class="textarea" id="taskDescription" placeholder="Deskripsi Tugas"></textarea>
+            </div>
+        </div>
+        <div class="field">
+            <div class="control">
+                <button class="button is-primary" onclick="addTask()">Tambah Tugas</button>
+            </div>
+        </div>
+        <div id="taskList" class="content"></div>
+    </div>
+    <div id="editModal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+          <header class="modal-card-head">
+            <p class="modal-card-title">Edit Tugas</p>
+            <button class="delete" aria-label="close" onclick="closeEditModal()"></button>
+          </header>
+          <section class="modal-card-body">
+            <div class="field">
+              <label class="label">Judul Tugas</label>
+              <div class="control">
+                <input class="input" type="text" id="editTaskTitle" placeholder="Judul Tugas">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Deskripsi Tugas</label>
+              <div class="control">
+                <textarea class="textarea" id="editTaskDescription" placeholder="Deskripsi Tugas"></textarea>
+              </div>
+            </div>
+          </section>
+          <footer class="modal-card-foot">
+            <button class="button is-success" onclick="saveEditedTask()">Simpan</button>
+            <button class="button" onclick="closeEditModal()">Batal</button>
+          </footer>
+        </div>
+      </div>
+      
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadTasks(); // Memuat tugas dari penyimpanan lokal saat aplikasi dimuat
+    });
+
+    function addTask() {
+        const title = document.getElementById('taskTitle').value.trim();
+        const description = document.getElementById('taskDescription').value.trim();
+        if (title && description) {
+            const task = { title, description, completed: false };
+            tasks.push(task);
+            saveTasks(); // Menyimpan tugas setelah penambahan
+            renderTasks();
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskDescription').value = '';
+        }
+    }
+
+    function toggleComplete(index) {
+        tasks[index].completed = !tasks[index].completed;
+        saveTasks(); // Menyimpan tugas setelah perubahan status
+        renderTasks();
+    }
+
+    function deleteTask(index) {
+        tasks.splice(index, 1);
+        saveTasks(); // Menyimpan tugas setelah penghapusan
+        renderTasks();
+    }
+
+    function renderTasks() {
+        const taskListElement = document.getElementById('taskList');
+        taskListElement.innerHTML = '';
+        tasks.forEach((task, index) => {
+            taskListElement.innerHTML += `
+                <div class="box ${task.completed ? 'is-complete' : ''}">
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <p>
+                                    <strong>${task.title}</strong> <br>
+                                    ${task.description}
+                                </p>
+                            </div>
+                            <nav class="level is-mobile">
+                                <div class="level-left">
+                                    <a class="level-item" onclick="toggleComplete(${index})">
+                                        <span class="icon is-small"><i class="fas ${task.completed ? 'fa-undo' : 'fa-check'}"></i></span>
+                                    </a>
+                                    <a class="level-item" onclick="deleteTask(${index})">
+                                        <span class="icon is-small"><i class="fas fa-trash"></i></span>
+                                    </a>
+                                    <a class="level-item" onclick="openEditModal(${index})">
+                                        <span class="icon is-small"><i class="fas fa-edit"></i></span>
+                                      </a>
+                                </div>
+                            </nav>
+                        </div>
+                    </article>
+                </div>
+            `;
+            
+        }
+        );
+        
+    }
+
+    function saveTasks() {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function loadTasks() {
+        tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        renderTasks();
+    }
+
+    let tasks = [];
+    let currentEditIndex = null; // Untuk menyimpan indeks tugas yang sedang diedit
+
+function openEditModal(index) {
+  currentEditIndex = index;
+  const task = tasks[index];
+  document.getElementById('editTaskTitle').value = task.title;
+  document.getElementById('editTaskDescription').value = task.description;
+  document.getElementById('editModal').style.display = 'block';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+function saveEditedTask() {
+  const title = document.getElementById('editTaskTitle').value;
+  const description = document.getElementById('editTaskDescription').value;
+  if (title && description) {
+    const task = tasks[currentEditIndex];
+    task.title = title;
+    task.description = description;
+    saveTasks();
+    renderTasks();
+    closeEditModal();
+  }
+}
+
+</script>
+
+
+</body>
+</html>
